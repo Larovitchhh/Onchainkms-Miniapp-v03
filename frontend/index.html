@@ -1,13 +1,41 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
-  </head>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>OnchainKMS v2</title>
+
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+
+  <!-- Base ownership -->
+  <meta
+    name="base:app_id"
+    content="6941e8fdd19763ca26ddc370"
+  />
+
+  <!-- Base Mini App Embed -->
+  <meta
+    name="fc:miniapp"
+    content='{
+      "version": "next",
+      "imageUrl": "https://onchainkms.baseminiapps.com/embed.png",
+      "button": {
+        "title": "Open OnchainKMS v2",
+        "action": {
+          "type": "launch_frame",
+          "name": "OnchainKMS",
+          "url": "https://onchainkms.baseminiapps.com"
+        }
+      }
+    }'
+  />
+</head>
+
   <body>
     <div id="root"></div>
+
+    <!-- Vite entry -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

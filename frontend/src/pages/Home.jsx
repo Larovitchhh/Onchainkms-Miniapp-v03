@@ -1,76 +1,65 @@
-import StatsCard from "../components/StatsCard";
+import { useEffect, useState } from "react";
+import ProfileCard from "../components/ProfileCard";
 
 export default function Home({ isFarcaster, username }) {
-  // Mock data (luego vendrá del backend)
-  const stats = {
-    level: 3,
-    xp: 1240,
-    nextLevelXp: 2000,
-    rank: 128,
-  };
+  const [ranking, setRanking] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const progress =
-    Math.round((stats.xp / stats.nextLevelXp) * 100);
+  useEffect(() => {
+    fetch("/api/strava/club/ranking")
+      .then((res) => res.json())
+      .then((data) => {
+        setRanking(data.ranking || []);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div>
-      <p>
-        {isFarcaster
-          ? `Welcome @${username}`
-          : "Welcome to OnchainKMS"}
-      </p>
+      <h3 style={{ marginBottom: 12 }}>
+        Welcome{username ? `, @${username}` : ""}
+      </h3>
 
-      <p style={{ opacity: 0.7 }}>
-        Track activity, build reputation, and mint progress on Farcaster.
-      </p>
+      <ProfileCard title="🏆 Club Ranking">
+        {loading && (
+          <p style={{ fontSize: 14, opacity: 0.6 }}>
+            Loading ranking…
+          </p>
+        )}
 
-      {/* Stats */}
-      <div
-        style={{
-          display: "flex",
-          gap: 12,
-          marginTop: 16,
-          marginBottom: 16,
-        }}
-      >
-        <StatsCard label="Level" value={stats.level} />
-        <StatsCard label="XP" value={stats.xp} />
-        <StatsCard label="Rank" value={`#${stats.rank}`} />
-      </div>
+        {!loading && ranking.length === 0 && (
+          <p style={{ fontSize: 14, opacity: 0.6 }}>
+            No ranking data yet.
+          </p>
+        )}
 
-      {/* Progress */}
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 12, opacity: 0.6 }}>
-          Next level progress
-        </div>
-        <div
-          style={{
-            height: 8,
-            background: "#e5e7eb",
-            borderRadius: 4,
-            overflow: "hidden",
-            marginTop: 4,
-          }}
-        >
-          <div
-            style={{
-              width: `${progress}%`,
-              height: "100%",
-              background: "#000",
-            }}
-          />
-        </div>
-        <div style={{ fontSize: 11, opacity: 0.5, marginTop: 4 }}>
-          {stats.xp} / {stats.nextLevelXp} XP
-        </div>
-      </div>
+        {!loading &&
+          ranking.slice(0, 10).map((r) => (
+            <div
+              key={r.position}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "6px 0",
+                borderBottom: "1px solid #e5e7eb",
+                fontSize: 14,
+              }}
+            >
+              <div>
+                <strong>
+                  #{r.position} {r.athlete}
+                </strong>
+                <div style={{ fontSize: 12, opacity: 0.6 }}>
+                  {r.activities} activities · {r.kms.toFixed(1)} km
+                </div>
+              </div>
 
-      {!isFarcaster && (
-        <p style={{ fontSize: 14, opacity: 0.6 }}>
-          You are viewing the embed version. Open the mini app from the
-          Farcaster launcher for full access.
-        </p>
-      )}
+              <div style={{ fontWeight: 600 }}>
+                {r.xp} XP
+              </div>
+            </div>
+          ))}
+      </ProfileCard>
     </div>
   );
 }

@@ -1,52 +1,34 @@
-import { sdk } from "@farcaster/miniapp-sdk";
 import { useEffect, useState } from "react";
+import sdk from "@farcaster/frame-sdk";
 
 export function useFarcasterContext() {
-  const [state, setState] = useState({
-    loading: true,
-    isFarcaster: false,
-    fid: null,
-    username: null,
-    pfp: null,
-  });
+  const [loading, setLoading] = useState(true);
+  const [isFarcaster, setIsFarcaster] = useState(false);
+  const [username, setUsername] = useState(null);
 
   useEffect(() => {
-    async function loadContext() {
+    async function init() {
       try {
-        const context = await sdk.getContext();
+        // Detectar si estamos dentro de Farcaster
+        const context = await sdk.context;
 
-        if (!context?.user) {
-          setState({
-            loading: false,
-            isFarcaster: false,
-            fid: null,
-            username: null,
-            pfp: null,
-          });
-          return;
+        if (context) {
+          setIsFarcaster(true);
+          setUsername(context.user?.username || null);
+
+          // 🔑 ESTA ES LA LÍNEA CRÍTICA
+          sdk.actions.ready();
         }
-
-        setState({
-          loading: false,
-          isFarcaster: true,
-          fid: context.user.fid,
-          username: context.user.username,
-          pfp: context.user.pfp || null,
-        });
-      } catch (err) {
-        console.error("Farcaster context error", err);
-        setState({
-          loading: false,
-          isFarcaster: false,
-          fid: null,
-          username: null,
-          pfp: null,
-        });
+      } catch (e) {
+        // Web / embed normal
+        setIsFarcaster(false);
+      } finally {
+        setLoading(false);
       }
     }
 
-    loadContext();
+    init();
   }, []);
 
-  return state;
+  return { loading, isFarcaster, username };
 }

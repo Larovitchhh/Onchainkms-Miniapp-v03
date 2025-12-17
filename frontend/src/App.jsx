@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TabBar from "./components/TabBar";
 import { useFarcasterContext } from "./farcaster/useFarcasterContext";
 
@@ -11,8 +11,47 @@ export default function App() {
   const { loading, isFarcaster, username } = useFarcasterContext();
   const [tab, setTab] = useState("Home");
 
-  // 👉 NUEVO: tema light / dark
   const [dark, setDark] = useState(false);
+
+  /**
+   * 🔐 AUTENTICACIÓN MINIAPP (CORRECTA)
+   * El FID se lee directamente del contexto global de Farcaster
+   */
+  useEffect(() => {
+    if (loading) return;
+    if (!isFarcaster) return;
+
+    const fid = window?.Farcaster?.context?.user?.fid;
+
+    if (!fid) {
+      console.warn("FID not available in Farcaster context");
+      return;
+    }
+
+    if (localStorage.getItem("token")) return;
+
+    console.log("AUTH → sending fid to backend:", fid);
+
+    fetch("/api/auth/farcaster", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ fid }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.token) {
+          localStorage.setItem("token", data.token);
+          console.log("SESSION OK", data.user);
+        } else {
+          console.error("Auth failed", data);
+        }
+      })
+      .catch((err) => {
+        console.error("Backend auth error", err);
+      });
+  }, [loading, isFarcaster]);
 
   if (loading) {
     return <div style={{ padding: 16 }}>Loading…</div>;
@@ -32,7 +71,6 @@ export default function App() {
     >
       <h1 style={{ marginBottom: 4 }}>OnchainKMS</h1>
 
-      {/* Theme toggle */}
       <button
         onClick={() => setDark(!dark)}
         style={{
@@ -60,13 +98,9 @@ export default function App() {
         <Profile isFarcaster={isFarcaster} username={username} />
       )}
 
-      {tab === "Activity" && (
-        <Activity isFarcaster={isFarcaster} />
-      )}
+      {tab === "Activity" && <Activity isFarcaster={isFarcaster} />}
 
-      {tab === "Mint" && (
-        <Mint isFarcaster={isFarcaster} />
-      )}
+      {tab === "Mint" && <Mint isFarcaster={isFarcaster} />}
     </div>
   );
 }

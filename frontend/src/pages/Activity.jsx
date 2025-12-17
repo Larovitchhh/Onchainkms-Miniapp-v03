@@ -1,10 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ActivityItem from "../components/ActivityItem";
 import MintModal from "../components/MintModal";
 
 export default function Activity({ isFarcaster }) {
   const [mintingActivity, setMintingActivity] = useState(null);
   const [mintStatus, setMintStatus] = useState("idle");
+
+  const [ranking, setRanking] = useState([]);
+  const [rankingLoading, setRankingLoading] = useState(true);
+  const [rankingError, setRankingError] = useState(null);
 
   const activities = [
     {
@@ -29,6 +33,25 @@ export default function Activity({ isFarcaster }) {
       status: "minted",
     },
   ];
+
+  // 🔄 Fetch club ranking
+  useEffect(() => {
+    async function fetchRanking() {
+      try {
+        const res = await fetch("/api/strava/club/ranking");
+        if (!res.ok) throw new Error("Failed to load ranking");
+
+        const data = await res.json();
+        setRanking(data.ranking || []);
+      } catch (err) {
+        setRankingError(err.message);
+      } finally {
+        setRankingLoading(false);
+      }
+    }
+
+    fetchRanking();
+  }, []);
 
   if (!isFarcaster) {
     return (
@@ -59,6 +82,7 @@ export default function Activity({ isFarcaster }) {
 
   return (
     <div>
+      {/* ================= YOUR ACTIVITY ================= */}
       <h3 style={{ marginBottom: 12 }}>Your Activity</h3>
 
       {activities.map((activity) => (
@@ -93,6 +117,47 @@ export default function Activity({ isFarcaster }) {
           ✅ Activity minted successfully
         </p>
       )}
+
+      {/* ================= CLUB RANKING ================= */}
+      <hr style={{ margin: "24px 0", opacity: 0.2 }} />
+
+      <h3 style={{ marginBottom: 12 }}>🏆 Club Ranking</h3>
+
+      {rankingLoading && (
+        <p style={{ fontSize: 13, opacity: 0.6 }}>
+          Loading ranking…
+        </p>
+      )}
+
+      {rankingError && (
+        <p style={{ fontSize: 13, color: "red" }}>
+          Error loading ranking: {rankingError}
+        </p>
+      )}
+
+      {!rankingLoading && ranking.length === 0 && (
+        <p style={{ fontSize: 13, opacity: 0.6 }}>
+          No ranking data available.
+        </p>
+      )}
+
+      {ranking.map((row) => (
+        <div
+          key={row.position}
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            padding: "6px 0",
+            fontSize: 14,
+            borderBottom: "1px solid rgba(0,0,0,0.05)",
+          }}
+        >
+          <span>
+            #{row.position} · {row.athlete}
+          </span>
+          <strong>{row.xp} XP</strong>
+        </div>
+      ))}
     </div>
   );
 }
